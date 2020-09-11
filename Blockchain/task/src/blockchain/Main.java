@@ -1,22 +1,35 @@
 package blockchain;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.io.Serializable;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Scanner;
+import java.util.concurrent.ThreadLocalRandom;
 
-class block {
+class block implements Serializable {
     public int id;
-    private long timestamp;
-    private String previousHashBlock;
-    private String hashOfBlock;
+    private final long timestamp;
+    private final String previousHashBlock;
+    private final String hashOfBlock;
+    private final int timeRequiredToGenerateBlock;
+    public static int numberOfZeros;
+    private final int magicNumber;
 
-    public block(int id, long timestamp, String previousHashBlock, String hashOfBlock) {
+    public block(int id, long timestamp, String previousHashBlock, String hashOfBlock,int timeRequiredToGenerateBlock,int magicNumber) {
         this.id = id;
         this.timestamp = timestamp;
         this.previousHashBlock = previousHashBlock;
         this.hashOfBlock = hashOfBlock;
+        this.timeRequiredToGenerateBlock = timeRequiredToGenerateBlock;
+        this.magicNumber = magicNumber;
+    }
 
+    public static void setNumberOfZeros(int numberOfZeros) {
+        block.numberOfZeros = numberOfZeros;
     }
 
     public String getPreviousHashBlock() {
@@ -34,33 +47,33 @@ class block {
     public int getId() {
         return id;
     }
+    public void PrintBlock(){
+        System.out.println("Block:");
+        System.out.println("Id: " + id);
+        System.out.println("Timestamp: " + timestamp);
+        System.out.println("Magic number: "+ magicNumber);
+        System.out.println("Hash of the previous block:");
+        System.out.println(previousHashBlock);
+        System.out.println("Hash of the block:");
+        System.out.println(hashOfBlock);
+        System.out.println("Block was generating for " + timeRequiredToGenerateBlock + " seconds");
+        System.out.println();
+    }
 }
 
-
-
 public class Main {
-
-    public static void main(String args[]){
-        List<block> blockChain = new ArrayList<block>();
-        blockChain.add(createBlock(blockChain));
-        blockChain.add(createBlock(blockChain));
-        blockChain.add(createBlock(blockChain));
-        blockChain.add(createBlock(blockChain));
-        blockChain.add(createBlock(blockChain));
-       for(block b:blockChain){
-           System.out.println("Block:");
-           System.out.println("Id: " + b.getId());
-           System.out.println("Timestamp: " + b.getTimestamp());
-           System.out.println("Hash of the previous block:");
-           System.out.println(b.getPreviousHashBlock());
-           System.out.println("Hash of the block:");
-           System.out.println(b.getHashOfBlock());
-           System.out.println();
-       }
-
-
-
-
+    public static void main(String[] args){
+        Scanner scanner = new Scanner(System.in);
+        int numberOfZeros = scanner.nextInt();
+        List<block> blockChain = new ArrayList<>();
+        blockChain.add(createBlock(blockChain,numberOfZeros));
+        blockChain.add(createBlock(blockChain,numberOfZeros));
+        blockChain.add(createBlock(blockChain,numberOfZeros));
+        blockChain.add(createBlock(blockChain,numberOfZeros));
+        blockChain.add(createBlock(blockChain,numberOfZeros));
+        for(block b:blockChain){
+            b.PrintBlock();
+        }
     }
 
     public static String applySha256(String input){
@@ -81,25 +94,43 @@ public class Main {
         }
     }
 
-    public static block createBlock(List<block> blockChain){
+    public static block createBlock(List<block> blockChain,int numberOfZeros){
+        long timestamp = new Date().getTime();
+        String zerosString = "";
+        for (int i = 0;i<numberOfZeros;i++){
+            zerosString = "0" + zerosString;
+        }
+        String hashOfBlock ="qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq";
+
         if(blockChain.size()==0){
             int id = 1;
             String previousHashBlock = "0";
-            long timestamp = new Date().getTime();
-            String sha256input = String.valueOf(id + previousHashBlock+ timestamp);
-            String hashOfBlock = applySha256(sha256input);
-
-            return new block(id,timestamp,previousHashBlock,hashOfBlock);
+            return getBlock(numberOfZeros, timestamp, zerosString, hashOfBlock, id, previousHashBlock);
         }
         else {
             int id = blockChain.size() + 1;
             String previousHashBlock = blockChain.get(blockChain.size() - 1).getHashOfBlock();
-            long timestamp = new Date().getTime();
-            String sha26input = String.valueOf(id + previousHashBlock+ timestamp);
-            String hashOfBlock = applySha256(sha26input);
-
-            return new block(id,timestamp,previousHashBlock,hashOfBlock);
+            return getBlock(numberOfZeros, timestamp, zerosString, hashOfBlock, id, previousHashBlock);
         }
     }
 
+    @NotNull
+    private static block getBlock(int numberOfZeros, long timestamp, String zerosString, String hashOfBlock, int id, String previousHashBlock) {
+        int magicNumber = 0;
+        if(numberOfZeros>0) {
+            while (!zerosString.equals(hashOfBlock.substring(0, numberOfZeros))) {
+                magicNumber = ThreadLocalRandom.current().nextInt();
+                String sha256input = id + previousHashBlock + timestamp + magicNumber;
+                hashOfBlock = applySha256(sha256input);
+            }
+        }
+        else {
+            String sha256input = id + previousHashBlock + timestamp;
+            hashOfBlock = applySha256(sha256input);
+        }
+
+        return new block(id,timestamp,previousHashBlock,hashOfBlock,(int)((new Date().getTime()/1000) - (timestamp/1000)),magicNumber);
+    }
+
 }
+
