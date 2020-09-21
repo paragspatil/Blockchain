@@ -1,6 +1,5 @@
 package blockchain;
 
-import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 import java.security.MessageDigest;
@@ -22,8 +21,9 @@ class block implements Serializable {
     private final int timeRequiredToGenerateBlock;
     public int numberOfZeros;
     private final int magicNumber;
+    private String messege;
 
-    public block(int id, long timestamp, String previousHashBlock, String hashOfBlock,int timeRequiredToGenerateBlock,int magicNumber,int minerId,int numberOfZeros) {
+    public block(int id, long timestamp, String previousHashBlock, String hashOfBlock,int timeRequiredToGenerateBlock,int magicNumber,int minerId,int numberOfZeros,String messege) {
         this.id = id;
         this.timestamp = timestamp;
         this.previousHashBlock = previousHashBlock;
@@ -32,6 +32,7 @@ class block implements Serializable {
         this.magicNumber = magicNumber;
         this.minerId = minerId;
         this.numberOfZeros = numberOfZeros;
+        this.messege = messege;
     }
 
 
@@ -64,6 +65,14 @@ class block implements Serializable {
         System.out.println(previousHashBlock);
         System.out.println("Hash of the block:");
         System.out.println(hashOfBlock);
+        if(this.messege.equals("")){
+            System.out.println("Block data: no messages");
+        }
+        else {
+            System.out.println("Block data:");
+            System.out.println(this.messege);
+        }
+
         System.out.println("Block was generating for " + timeRequiredToGenerateBlock + " seconds");
 
     }
@@ -78,11 +87,17 @@ public class Main {
         blockChain.add(createBlock(blockChain));
         blockChain.add(createBlock(blockChain));
         blockChain.add(createBlock(blockChain));
-        try {
-            Thread.sleep(3000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        blockChain.add(createBlock(blockChain));
+        blockChain.add(createBlock(blockChain));
+        blockChain.add(createBlock(blockChain));
+        blockChain.add(createBlock(blockChain));
+        blockChain.add(createBlock(blockChain));
+        blockChain.add(createBlock(blockChain));
+        blockChain.add(createBlock(blockChain));
+        blockChain.add(createBlock(blockChain));
+        blockChain.add(createBlock(blockChain));
+        blockChain.add(createBlock(blockChain));
+
 
 
     }
@@ -128,7 +143,8 @@ public class Main {
                 executor.submit(() -> {
                     try {
                         //System.out.println(Thread.currentThread().getName().substring(14, 15)+"index");
-                        block bl = getBlock(finalNumberOfZeros, timestamp, finalZerosString, hashOfBlock, id, previousHashBlock, Integer.parseInt(Thread.currentThread().getName().substring(14, 15)));
+                        String message= "";
+                        block bl = getBlock(finalNumberOfZeros, timestamp, finalZerosString, hashOfBlock, id, previousHashBlock, Integer.parseInt(Thread.currentThread().getName().substring(14, 15)),message);
                         int time = bl.getTimeRequiredToGenerateBlock();
                         // System.out.println("time :"+ time);
                         tempChain[finalI] = bl;
@@ -173,7 +189,8 @@ public class Main {
                 int finalNumberOfZeros1 = numberOfZeros;
                 executor.submit(() -> {
                     //System.out.println(Thread.currentThread().getName().substring(14, 15)+"index");
-                    block bl =  getBlock(finalNumberOfZeros1, timestamp, finalZerosString, hashOfBlock, id, previousHashBlock, Integer.parseInt(Thread.currentThread().getName().substring(14, 15)));
+                    String messege = "Miner" + Thread.currentThread().getName().substring(14, 15) + ": I created this block";
+                    block bl =  getBlock(finalNumberOfZeros1, timestamp, finalZerosString, hashOfBlock, id, previousHashBlock, Integer.parseInt(Thread.currentThread().getName().substring(14, 15)),messege);
                     int time = bl.getTimeRequiredToGenerateBlock();
                    // System.out.println("time :"+ time);
                     tempChain[finalI] = bl;
@@ -200,11 +217,11 @@ public class Main {
             }
             if(tempChain[index]!=null) {
                 tempChain[index].PrintBlock();
-                if (tempChain[index].numberOfZeros < 2) {
+                if (tempChain[index].numberOfZeros < 4) {
                     tempChain[index].numberOfZeros += 1;
                     System.out.println("N was increased to " + tempChain[index].numberOfZeros);
                     System.out.println();
-                } else if (tempChain[index].numberOfZeros == 2) {
+                } else if (tempChain[index].numberOfZeros == 4) {
                     System.out.println("N stays the same");
                     System.out.println();
                 } else {
@@ -214,7 +231,8 @@ public class Main {
                 }
             }
             else {
-                block bl = getBlock(numberOfZeros, timestamp, finalZerosString, hashOfBlock, id, previousHashBlock, 1);
+                String messege = "Miner" + Thread.currentThread().getName() + ": I created this block";
+                block bl = getBlock(numberOfZeros, timestamp, finalZerosString, hashOfBlock, id, previousHashBlock, 1,messege);
                 bl.PrintBlock();
                 System.out.println("N stays the same");
                 System.out.println();
@@ -224,13 +242,13 @@ public class Main {
         }
     }
 
-    @NotNull
-    private static block getBlock(int numberOfZeros, long timestamp, String zerosString, String hashOfBlock, int id, String previousHashBlock,int minerId) {
+
+    private static block getBlock(int numberOfZeros, long timestamp, String zerosString, String hashOfBlock, int id, String previousHashBlock,int minerId,String messege) {
         int magicNumber = 0;
         if(numberOfZeros>0) {
             while (!zerosString.equals(hashOfBlock.substring(0, numberOfZeros))) {
                 magicNumber = ThreadLocalRandom.current().nextInt();
-                String sha256input = id + previousHashBlock + timestamp + magicNumber;
+                String sha256input = id + previousHashBlock + timestamp + magicNumber + messege;
                 hashOfBlock = applySha256(sha256input);
             }
         }
@@ -239,7 +257,7 @@ public class Main {
             hashOfBlock = applySha256(sha256input);
         }
 
-        return new block(id,timestamp,previousHashBlock,hashOfBlock,(int)((new Date().getTime()/1000) - (timestamp/1000)),magicNumber,minerId,numberOfZeros);
+        return new block(id,timestamp,previousHashBlock,hashOfBlock,(int)((new Date().getTime()/1000) - (timestamp/1000)),magicNumber,minerId,numberOfZeros,messege);
     }
 
     public static boolean validate(List<block> blockChain,int numberOfZeros){
